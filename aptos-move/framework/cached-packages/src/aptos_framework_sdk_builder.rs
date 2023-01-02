@@ -765,10 +765,10 @@ impl EntryFunctionCall {
             } => multisig_account_reject_transaction(multisig_account, transaction_id),
             MultisigAccountRemoveOwners { owners_to_remove } => {
                 multisig_account_remove_owners(owners_to_remove)
-            }
+            },
             MultisigAccountRemoveTransaction { multisig_account } => {
                 multisig_account_remove_transaction(multisig_account)
-            }
+            },
             MultisigAccountUpdateSignaturesRequired {
                 new_signatures_required,
             } => multisig_account_update_signatures_required(new_signatures_required),

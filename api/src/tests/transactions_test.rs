@@ -479,6 +479,35 @@ async fn test_signing_message_with_entry_function_payload() {
     test_signing_message_with_payload(context, txn, payload).await;
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_multisig_transaction() {
+    let mut context = new_test_context(current_function_name!());
+    let mut owner_account = context.gen_account();
+    // TODO: Create an actual multisig account via the multisig_account module.
+    let multisig_account = context.gen_account();
+    context.commit_block(&vec![
+        context.create_user_account(&owner_account),
+    ]).await;
+
+    context.api_execute_txn(&mut owner_account, json!({
+        "type": "multisig_payload",
+        "multisig_address": multisig_account.address().to_hex_literal(),
+        "transaction_id": 1,
+        "transaction_payload": {
+            "function": "0x1::aptos_account::create_account",
+            "type_arguments": [],
+            "arguments": ["0x12345"]
+        }
+    })).await;
+
+    // Without payload.
+    context.api_execute_txn(&mut owner_account, json!({
+        "type": "multisig_payload",
+        "multisig_address": multisig_account.address().to_hex_literal(),
+        "transaction_id": 2,
+    })).await;
+}
+
 // need a correct module payload
 #[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
