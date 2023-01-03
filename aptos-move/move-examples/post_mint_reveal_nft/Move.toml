@@ -9,4 +9,6 @@ AptosToken = { local = "../../framework/aptos-token" }
 DataStructure = { local = "../data_structures" }
 
 [addresses]
-source_addr = "_"
+aptos_framework = "0x1"
+source_addr = "0xcafe"
+post_mint_reveal_nft = "0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5"

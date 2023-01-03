@@ -68,6 +68,10 @@ module post_mint_reveal_nft::minting {
         royalty_points_den: u64,
         royalty_points_num: u64,
         tokens: BigVector<TokenAsset>,
+        // Use a bucket table to check if there is any duplicate in tokens.
+        // The `key` is the uri of the token, and the `value` is true (the value doesn't matter in this case,
+        // since we're using a bucket_table as a hash set here).
+        dedupped_tokens: BucketTable<String, bool>,
         // The maximum amount of tokens a non-whitelisted address can mint. 0 indicates that there is no maximum and
         // any address can mint any amount of tokens within the limit of the collection maximum.
         public_mint_limit: u64,
@@ -156,6 +160,8 @@ module post_mint_reveal_nft::minting {
     const ETOKEN_ID_NOT_FOUND: u64 = 15;
     /// Can only exchange after the reveal starts.
     const ECANNOT_EXCHANGE_BEFORE_REVEAL_SRARTS: u64 = 16;
+    /// Can only add unique token uris.
+    const EDUPLICATE_TOKEN_URI: u64 = 17;
 
     /// Initialize NFTMintConfig for this module.
     fun init_module(post_mint_reveal_nft_resource_account: &signer) {
@@ -229,6 +235,7 @@ module post_mint_reveal_nft::minting {
             royalty_points_den,
             royalty_points_num,
             tokens: big_vector::empty<TokenAsset>(128),
+            dedupped_tokens: bucket_table::new<String, bool>(128),
             public_mint_limit,
         });
 
@@ -378,12 +385,15 @@ module post_mint_reveal_nft::minting {
 
         let i = 0;
         while (i < vector::length(&token_uris)) {
+            let token_uri = vector::borrow(&token_uris, i);
+            assert!(!bucket_table::contains(&collection_config.dedupped_tokens, token_uri), error::invalid_argument(EDUPLICATE_TOKEN_URI));
             big_vector::push_back(&mut collection_config.tokens, TokenAsset {
-                token_uri: *vector::borrow(&token_uris, i),
+                token_uri: *token_uri,
                 property_keys: *vector::borrow(&property_keys, i),
                 property_values: *vector::borrow(&property_values, i),
                 property_types: *vector::borrow(&property_types, i),
             });
+            bucket_table::add(&mut collection_config.dedupped_tokens, *token_uri, true);
             i = i + 1;
         };
     }
@@ -638,7 +648,9 @@ module post_mint_reveal_nft::minting {
         let property_types = vector::empty<vector<String>>();
         let i = 0;
         while (i < 3) {
-            vector::push_back(&mut token_uris, utf8(b"token uri"));
+            let token_uri = utf8(b"token uri");
+            string::append(&mut token_uri, u64_to_string(i));
+            vector::push_back(&mut token_uris, token_uri);
             vector::push_back(&mut property_keys, vector::empty<String>());
             vector::push_back(&mut property_values, vector::empty<vector<u8>>());
             vector::push_back(&mut property_types, vector::empty<String>());
@@ -1042,5 +1054,22 @@ module post_mint_reveal_nft::minting {
         set_up_test(&source_account, &resource_account, &admin_account, &wl_nft_claimer, &public_nft_claimer, &treasury_account, &aptos_framework, 10, 0);
         let resource_signer = acquire_resource_signer(&admin_account);
         assert!(signer::address_of(&resource_signer) == signer::address_of(&resource_account), 0);
+    }
+
+    #[test (source_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, admin_account = @0x456, wl_nft_claimer = @0x123, public_nft_claimer = @0x234, treasury_account = @0x345, aptos_framework = @aptos_framework)]
+    #[expected_failure(abort_code = 0x10011, location = Self)]
+    public entry fun test_duplicate_token_uris(
+        source_account: signer,
+        resource_account: signer,
+        admin_account: signer,
+        wl_nft_claimer: signer,
+        public_nft_claimer: signer,
+        treasury_account: signer,
+        aptos_framework: signer,
+    ) acquires NFTMintConfig, WhitelistMintConfig, PublicMintConfig, RevealConfig, CollectionConfig {
+        set_up_test(&source_account, &resource_account, &admin_account, &wl_nft_claimer, &public_nft_claimer, &treasury_account, &aptos_framework, 10, 0);
+        set_minting_and_reveal_config(&admin_account, 50, 200, 5, 201, 400, 10, 400);
+        set_up_token_uris(&admin_account);
+        set_up_token_uris(&admin_account);
     }
 }
