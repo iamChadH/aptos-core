@@ -199,7 +199,7 @@ Upon success, the CLI will print out the following:
 The `set_message` function modifies the `hello_blockchain` `MessageHolder` resource. A resource is a data structure that is stored in [global storage](https://move-language.github.io/move/structs-and-resources.html#storing-resources-in-global-storage). The resource can be read by querying the following REST API:
 
 ```bash
-
+*Broken link*
 https://fullnode.devnet.aptoslabs.com/v1/accounts/a345dbfb0c94416589721360f207dcc92ecfe4f06d8ddc1c286f569d59721e5a/resource/0xa345dbfb0c94416589721360f207dcc92ecfe4f06d8ddc1c286f569d59721e5a::message::MessageHolder
 ```
 
@@ -228,6 +228,7 @@ Notice that the `message` field contains `hello, blockchain`.
 Each successful call to `set_message` after the first call results in an update to `message_change_events`. The `message_change_events` for a given account can be accessed via the REST API: 
 
 ```bash
+*Broken link*
 https://fullnode.devnet.aptoslabs.com/v1/accounts/0xa345dbfb0c94416589721360f207dcc92ecfe4f06d8ddc1c286f569d59721e5a/events/0xa345dbfb0c94416589721360f207dcc92ecfe4f06d8ddc1c286f569d59721e5a::message::MessageHolder/message_change_events
 ```
 
